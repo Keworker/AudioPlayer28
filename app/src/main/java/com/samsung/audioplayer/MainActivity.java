@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     SeekBar seekBar;
     MediaPlayer player;
     MyThread myThread;
-    ArrayList<String> arrayList;
+    ArrayList<Track> arrayList;
     final static int MY_PERMISSION_REQUEST = 1;
 
     @Override
@@ -44,7 +44,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST);
         }
-        Log.d("no Tag", "1");
         pause = findViewById(R.id.pause);
         pause.setOnClickListener(this);
         play = findViewById(R.id.play);
@@ -64,7 +63,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         myThread.start();
         arrayList = new ArrayList<>();
         getMusic();
-        Log.d("no Tag", "1");
     }
 
     @Override
@@ -93,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public String timeFormatter(int time){
+    public static String timeFormatter(int time){
         time /= 1000;
         int second = time % 60;
         int minute = time / 60;
@@ -142,19 +140,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void getMusic() {
         ContentResolver contentResolver = getContentResolver();
         Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        Cursor songCursor = contentResolver.query(songUri, null, null, null, null);
-        Log.d("no Tag", "1");
+        Cursor songCursor = contentResolver.query(songUri, null,
+                null, null, null);
         if (songCursor != null && songCursor.moveToFirst()) {
             int songTitle = songCursor.getColumnIndex(MediaStore.Audio.Media.TITLE);
             int songArtist = songCursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
+            int songId = songCursor.getColumnIndex(MediaStore.Audio.Media._ID);
+            int songPath = songCursor.getColumnIndex(MediaStore.Audio.Media.DATA);
+            int songDuration = songCursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
             do {
-                String currentTitle = songCursor.getString(songTitle);
-                String currentArtist = songCursor.getString(songArtist);
-                arrayList.add(currentTitle + " " + currentArtist);
-                Log.d("My Tag", currentTitle + " " + currentArtist);
+                Track track = new Track(songCursor.getLong(songId), songCursor.getString(songTitle),
+                        songCursor.getString(songArtist), songCursor.getString(songPath));
+                track.setDuration(songCursor.getLong(songDuration));
+                arrayList.add(track);
+                Log.d("My", track.toString());
             } while (songCursor.moveToNext());
         }
-        Log.d("My Tag", String.valueOf(arrayList.size()));
+        Log.d("My", String.valueOf(arrayList.size()));
     }
 
     class MyThread extends Thread{
